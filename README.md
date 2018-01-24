@@ -1,2 +1,2 @@
 # knowledge
-mark some technology down
+mark some technologies down
