@@ -1,4 +1,4 @@
-# SpringBoot修改通用Http headers
+# SpringBoot修改通用Http Headers
 
 ## 背景:
 
