@@ -4,21 +4,23 @@
 
 前两天一个小会上，陈龙龙前辈提出一个问题：
 
->HTTP的response headers的Date是GMT，时间比东八区，也就是比国内时间差八个小时
+>HTTP的response headers的Date是GMT，时间比东八区(国内)时间差八个小时
 
 > 这个问题其实应该归结于[rfc7231](https://tools.ietf.org/html/rfc7231#section-7.1.1.1)设定的标准，只让用GMT/UTC标准时间。<br>
 
 > 坑爹的是原本的标准是要加时区的，但被军方给用错了，所以就把时区当成错字去掉了。[相关链接](https://tools.ietf.org/html/rfc1123#page-55 )
 
+这里建议查看相关日志的同学忽略Date的时间。但问题总有解决的办法，如果准确的时间很重要，且有其它的Header可能需要修改，那么请往后看。
+
 JavaWeb中修改HTTP Headers很容易，只要在响应请求的逻辑中获取`HttpServletResponse`后`setHeader`。
 
 但关于修改`Date`，`Server`这类默认的header，总是在业务逻辑中`setHeader`显然不适合维护。以下是我分析Tomcat以及SpringBoot处理请求的整个流程后得出的修改header的理想方法。
 
-如果不想看原理分析，请直接直接看[推荐方法](#conclusion)
+如果不想看原理分析，请直接看[推荐方法](#conclusion)
 
 ## 分析：
 
-### Tomcat处理请求流程图：
+### Tomcat处理请求流程：
 ![image](https://github.com/lclmichael/knowledge/blob/master/SpringBoot_HTTP_Headers/tomcat-rquest-flow.png?raw=true)
 > 1. 用户点击网页内容，请求被发送到本机端口8080，被在那里监听的Coyote HTTP/1.1 Connector获得。 
 > 1. Connector把该请求交给它所在的Service的Engine来处理，并等待Engine的回应。 
@@ -34,7 +36,7 @@ JavaWeb中修改HTTP Headers很容易，只要在响应请求的逻辑中获取`
 `Connector`监听端口后的操作2-9都是通过`Processor`处理请求，这里有一个[UML序列流程图](http://tomcat.apache.org/tomcat-7.0-doc/architecture/requestProcess/request-process.png)。图较大，请自行放大查看。
 
 
-在整个流程代码中，只有一处涉及到`Date`的修改：
+在整个流程中，只有一处涉及到`Date`的修改：
 
 ``` java
 `apache-tomcat-7.0.82-src`
@@ -51,9 +53,9 @@ public abstract class AbstractHttp11Processor<S> extends AbstractProcessor<S> {
     ...
 }
 ```
-其它的服务器默认HTTP Headers也几乎是在此设置，除了`Server`属性(就是服务器名称)外没有可以根据配置设置的办法。修改Tomcat源码再编译代价太大，因此最好不要在服务器层级修改。
+其它的服务器默认HTTP Headers也几乎是在此设置，除了`Server`属性(就是服务器名称)外没有可以根据配置设置的办法。修改Tomcat源码再编译代价太大，最好不要在服务器层级修改。
 
-### SpringBoot处理请求流程图：
+### SpringBoot处理请求流程：
 
 
 ![image](https://github.com/lclmichael/knowledge/blob/master/SpringBoot_HTTP_Headers/spring-mvc-rquest-flow.png?raw=true)
@@ -87,7 +89,7 @@ SpringBoot在Tomcat处理请求的流程中，处在`Servlet`层级，在SpringM
 1. 配置方法：`{Tomcat目录}/conf/server.xml`在`context`中增加`server`属性
 
 ```
-<Connector port="80" protocol="HTTP/1.1" server="custom name">
+<Connector port="80" protocol="HTTP/1.1" server="customize name">
 ```
 
 2. 其它需要自定义Headers：
@@ -120,11 +122,7 @@ public class ResponseHeaderInterceptor implements HandlerInterceptor {
                 //这里设置
                 //response.setHeader("Date", time);
             }
-
-    
 }
-
-
 ```
 
 
