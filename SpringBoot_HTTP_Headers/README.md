@@ -2,8 +2,6 @@
 
 ## 背景:
 
-前两天一个小会上，陈龙龙前辈提出一个问题：
-
 >HTTP的response headers的Date是GMT，时间比东八区(国内)时间差八个小时
 
 > 这个问题其实应该归结于[rfc7231](https://tools.ietf.org/html/rfc7231#section-7.1.1.1)设定的标准，只让用GMT/UTC标准时间。<br>
